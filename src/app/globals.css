@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/*
+ * Paleta "salvia + hueso" — misma paleta que Mama50App/DesignSystem/Colors.swift.
+ * Cada color vive en una variable que cambia con el esquema de color del
+ * sistema, y se expone como token de Tailwind vía @theme inline para poder
+ * usarla como cualquier utilidad (bg-sage-primary, text-charcoal, etc.) sin
+ * necesitar el prefijo dark: en cada elemento.
+ */
+:root {
+  --color-ivory-background: #faf7f0;
+  --color-card-surface: #ffffff;
+
+  --color-sage-primary: #9caf88;
+  --color-sage-dark: #6b7f5b;
+  --color-sage-light: #e3eadb;
+
+  --color-charcoal-text: #3a3a32;
+  --color-muted-text: #8a8a7e;
+
+  --color-warm-accent: #c9a66b;
+
+  --color-status-pending: #c9bfa8;
+  --color-status-confirmed: #9caf88;
+  --color-status-declined: #c98f7b;
+
+  --color-hairline: rgb(0 0 0 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ivory-background: #18181a;
+    --color-card-surface: #232326;
+
+    --color-sage-primary: #84a46e;
+    --color-sage-dark: #a9c193;
+    --color-sage-light: #272b23;
+
+    --color-charcoal-text: #edeae0;
+    --color-muted-text: #9a9a94;
+
+    --color-warm-accent: #d6b87e;
+
+    --color-status-pending: #8a8272;
+    --color-status-confirmed: #84a46e;
+    --color-status-declined: #d49c87;
+
+    --color-hairline: rgb(255 255 255 / 0.08);
+  }
+}
+
+@theme inline {
+  --color-ivory: var(--color-ivory-background);
+  --color-card: var(--color-card-surface);
+  --color-sage: var(--color-sage-primary);
+  --color-sage-dark: var(--color-sage-dark);
+  --color-sage-light: var(--color-sage-light);
+  --color-charcoal: var(--color-charcoal-text);
+  --color-muted: var(--color-muted-text);
+  --color-warm: var(--color-warm-accent);
+  --color-pending: var(--color-status-pending);
+  --color-confirmed: var(--color-status-confirmed);
+  --color-declined: var(--color-status-declined);
+  --color-hairline: var(--color-hairline);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-ivory-background);
+  color: var(--color-charcoal-text);
+}
