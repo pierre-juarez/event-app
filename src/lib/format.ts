@@ -1,8 +1,8 @@
 import type { RsvpStatus, VendorOptionStatus } from "./types";
 
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
+const currencyFormatter = new Intl.NumberFormat("es-PE", {
   style: "currency",
-  currency: "MXN",
+  currency: "PEN",
   maximumFractionDigits: 0,
 });
 

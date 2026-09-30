@@ -69,6 +69,19 @@ export default function VendorsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event]);
 
+  const statsByCategory = useMemo(() => {
+    const stats: Record<string, ReturnType<typeof categoryPriceStats>> = {};
+    for (const category of categories) {
+      stats[category.id] = categoryPriceStats(optionsByCategory[category.id] ?? []);
+    }
+    return stats;
+  }, [categories, optionsByCategory]);
+
+  const estimatedTotal = Object.values(statsByCategory).reduce(
+    (sum, s) => sum + (s.estimate ?? 0),
+    0
+  );
+
   async function handleDeleteCategory() {
     if (!deletingCategory) return;
     await deleteVendorCategory(deletingCategory.id);
@@ -99,44 +112,55 @@ export default function VendorsPage() {
           subtitle="Crea categorías como Salón, Catering, Música…"
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {categories.map((category) => {
-            const options = optionsByCategory[category.id] ?? [];
-            const selected = options.find((o) => o.status === "selected");
-            const cheapest = options
-              .map((o) => o.price)
-              .filter((p): p is number => p != null)
-              .sort((a, b) => a - b)[0];
-            return (
-              <Card key={category.id}>
-                <button className="w-full text-left" onClick={() => setOpenCategory(category)}>
-                  <div className="mb-1 flex items-center justify-between">
-                    <h3 className="font-medium text-charcoal">{category.name}</h3>
-                    <span className="text-xs text-muted">{options.length} cotizaciones</span>
-                  </div>
-                  {selected ? (
-                    <p className="text-sm text-warm">
-                      ✓ {selected.vendor_name}
-                      {selected.price != null && ` · ${formatCurrency(selected.price)}`}
-                    </p>
-                  ) : cheapest != null ? (
-                    <p className="text-sm text-muted">Desde {formatCurrency(cheapest)}</p>
-                  ) : (
-                    <p className="text-sm text-muted">Sin cotizaciones aún</p>
-                  )}
-                </button>
-                <div className="mt-3 flex justify-end">
-                  <button
-                    onClick={() => setDeletingCategory(category)}
-                    className="rounded-full px-2 py-1 text-xs text-muted hover:bg-declined/15 hover:text-declined"
-                  >
-                    Eliminar categoría
+        <>
+          <Card>
+            <p className="text-xs uppercase tracking-wide text-muted">Gasto total aproximado</p>
+            <p className="text-2xl font-semibold text-charcoal">{formatCurrency(estimatedTotal)}</p>
+            <p className="mt-1 text-xs text-muted">
+              Suma por categoría: el proveedor elegido o, si aún no hay uno, el promedio de las cotizaciones.
+            </p>
+          </Card>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {categories.map((category) => {
+              const options = optionsByCategory[category.id] ?? [];
+              const selected = options.find((o) => o.status === "selected");
+              const { cheapest, average, pricedCount } = statsByCategory[category.id];
+              return (
+                <Card key={category.id}>
+                  <button className="w-full text-left" onClick={() => setOpenCategory(category)}>
+                    <div className="mb-1 flex items-center justify-between">
+                      <h3 className="font-medium text-charcoal">{category.name}</h3>
+                      <span className="text-xs text-muted">{options.length} cotizaciones</span>
+                    </div>
+                    {selected ? (
+                      <p className="text-sm text-warm">
+                        ✓ {selected.vendor_name}
+                        {selected.price != null && ` · ${formatCurrency(selected.price)}`}
+                      </p>
+                    ) : cheapest != null ? (
+                      <p className="text-sm text-muted">Desde {formatCurrency(cheapest)}</p>
+                    ) : (
+                      <p className="text-sm text-muted">Sin cotizaciones aún</p>
+                    )}
+                    {pricedCount > 1 && average != null && (
+                      <p className="text-xs text-muted">
+                        Promedio {formatCurrency(average)} ({pricedCount} cotizaciones)
+                      </p>
+                    )}
                   </button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      onClick={() => setDeletingCategory(category)}
+                      className="rounded-full px-2 py-1 text-xs text-muted hover:bg-declined/15 hover:text-declined"
+                    >
+                      Eliminar categoría
+                    </button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {showCategoryForm && (
@@ -169,6 +193,21 @@ export default function VendorsPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Precios de una categoría (sin contar descartadas). `estimate` es lo que se
+ * suma al total aproximado: el precio del elegido o, si no hay, el promedio.
+ */
+function categoryPriceStats(options: VendorOptionRow[]) {
+  const prices = options
+    .filter((o) => o.status !== "discarded")
+    .map((o) => o.price)
+    .filter((p): p is number => p != null);
+  const cheapest = prices.length > 0 ? Math.min(...prices) : undefined;
+  const average = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : null;
+  const selectedPrice = options.find((o) => o.status === "selected")?.price ?? null;
+  return { cheapest, average, pricedCount: prices.length, estimate: selectedPrice ?? average };
 }
 
 function CategoryFormModal({
