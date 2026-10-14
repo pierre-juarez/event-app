@@ -236,6 +236,18 @@ function Invitation({
         >
           Te esperamos
         </p>
+
+        <p className="mt-10 text-xs opacity-60 sm:text-sm">
+          Hecho con 💖 por{" "}
+          <a
+            href="https://pierrejuarez.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium underline-offset-4 hover:underline"
+          >
+            Pierre Juarez
+          </a>
+        </p>
       </main>
 
       <Banner src="/invitation/flowers-bottom.jpg" position="bottom" />
