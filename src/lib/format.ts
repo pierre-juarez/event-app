@@ -67,7 +67,48 @@ export function attendeeCount(fullName: string, plusOnes: number): number {
 
 /** El nombre limpio, sin el "+N" (que sigue contando para los totales, solo no se muestra). */
 export function stripInlinePlusOnes(fullName: string): string {
-  return fullName.replace(/\+\s*\d+/, "").replace(/\s+/g, " ").trim();
+  return fullName
+    .replace(/\+\s*\d+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Deja solo los dígitos para wa.me. Un número de 9 dígitos se asume de Perú
+ * (+51); si ya trae código de país (+ o 00) se respeta. `null` si no parece
+ * un número válido.
+ */
+export function whatsappDigits(rawPhone: string | null): string | null {
+  if (!rawPhone) return null;
+  let digits = rawPhone.replace(/\D/g, "");
+  if (rawPhone.trim().startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 9) digits = `51${digits}`;
+  return digits.length >= 10 && digits.length <= 15 ? digits : null;
+}
+
+/** Link wa.me con el mensaje de invitación (emojis + link personal para confirmar). */
+export function whatsappInviteUrl(
+  rawPhone: string | null,
+  guestName: string,
+  inviteLink: string,
+): string | null {
+  const digits = whatsappDigits(rawPhone);
+  if (!digits) return null;
+  const message = [
+    `¡Hola ${guestName}! 🌸✨`,
+    "",
+    "Mi cumpleaños se acerca, y con mucho cariño y aprecio te invito a celebrar *mis 50 años* 🎉🥳💐",
+    "",
+    "Aquí está tu invitación 💌 y todos los detalles (fecha, hora y lugar) 📅📍:",
+    "",
+    "Por favor confirma tu asistencia en el enlace de abajo 👇",
+    inviteLink,
+    "",
+    "¡Será un honor compartir este día contigo! 💖🥂",
+    "",
+    "Espero verte! 🎶🎊",
+  ].join("\n");
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 export const RSVP_LABELS: Record<RsvpStatus, string> = {

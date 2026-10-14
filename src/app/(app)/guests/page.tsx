@@ -493,8 +493,15 @@ function GuestFormModal({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="guest-phone">Teléfono</Label>
-            <Input id="guest-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Label htmlFor="guest-phone">WhatsApp</Label>
+            <Input
+              id="guest-phone"
+              type="tel"
+              inputMode="tel"
+              placeholder="+51 987 654 321"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
           </div>
           <div>
             <Label htmlFor="guest-email">Correo</Label>

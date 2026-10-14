@@ -6,7 +6,7 @@ import {
   setGuestWhatsappInvite,
 } from "@/services/publicInviteService";
 import type { PublicGuestWhatsappRow } from "@/lib/types";
-import { attendeeCount, stripInlinePlusOnes } from "@/lib/format";
+import { attendeeCount, stripInlinePlusOnes, whatsappInviteUrl } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,6 +14,15 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { Spinner } from "@/components/ui/Spinner";
+
+/** Link wa.me con el mensaje y el link personal; null si el invitado no tiene un número válido. */
+function sendUrlFor(guest: PublicGuestWhatsappRow): string | null {
+  return whatsappInviteUrl(
+    guest.contact_phone,
+    stripInlinePlusOnes(guest.full_name),
+    `${window.location.origin}/invite/${guest.invite_token}`
+  );
+}
 
 export default function PublicInvitePage({
   params,
@@ -252,16 +261,26 @@ function GuestGroup({
       {!isCollapsed && (
         <ul className="mt-2 flex flex-col divide-y divide-hairline">
           {guests.map((guest) => (
-            <li key={guest.id}>
+            <li key={guest.id} className="flex items-center gap-2">
               <button
                 onClick={() => onSelect(guest)}
-                className="flex w-full items-center justify-between gap-3 py-3.5 text-left"
+                className="flex flex-1 items-center justify-between gap-3 py-3.5 text-left"
               >
                 <span className="text-base font-medium text-charcoal">
                   {stripInlinePlusOnes(guest.full_name)}
                 </span>
                 <span className="text-muted">›</span>
               </button>
+              {guest.whatsapp_invite_ok === true && sendUrlFor(guest) && (
+                <a
+                  href={sendUrlFor(guest)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 rounded-full bg-sage-light px-3 py-2 text-sm font-medium text-sage-dark hover:bg-sage/30"
+                >
+                  💬 Enviar
+                </a>
+              )}
             </li>
           ))}
         </ul>

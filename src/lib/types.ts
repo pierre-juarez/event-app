@@ -56,6 +56,9 @@ export interface PublicGuestWhatsappRow {
   full_name: string;
   plus_ones: number;
   whatsapp_invite_ok: boolean | null;
+  contact_phone: string | null;
+  /** Token del link personal (/invite/[invite_token]) para mandarlo por WhatsApp. */
+  invite_token: string;
 }
 
 /** Lo que expone `public_invitation_get` para pintar la invitación personal. */
