@@ -42,6 +42,10 @@ export interface GuestRow {
   /** null = todavía sin responder; se llena vía el link público de invite. */
   whatsapp_invite_ok: boolean | null;
   whatsapp_invite_responded_at: string | null;
+  /** Token del link personal de invitación (/invite/[invite_token]). */
+  invite_token: string;
+  song_suggestion: string | null;
+  rsvp_responded_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +56,19 @@ export interface PublicGuestWhatsappRow {
   full_name: string;
   plus_ones: number;
   whatsapp_invite_ok: boolean | null;
+}
+
+/** Lo que expone `public_invitation_get` para pintar la invitación personal. */
+export interface PublicInvitationRow {
+  full_name: string;
+  rsvp_status: RsvpStatus;
+  rsvp_responded_at: string | null;
+  plus_ones: number;
+  song_suggestion: string | null;
+  event_title: string;
+  event_date: string;
+  venue_name: string | null;
+  venue_address: string | null;
 }
 
 export interface TaskRow {

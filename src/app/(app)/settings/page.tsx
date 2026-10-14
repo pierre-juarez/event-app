@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEvent } from "@/contexts/EventContext";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Card } from "@/components/ui/Card";
+import { copyToClipboard } from "@/lib/clipboard";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Textarea } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -26,10 +27,10 @@ export default function SettingsPage() {
   if (!event) return null;
 
   const inviteLink =
-    typeof window !== "undefined" ? `${window.location.origin}/invite/${event.share_token}` : "";
+    typeof window !== "undefined" ? `${window.location.origin}/whatsapp/${event.share_token}` : "";
 
   async function handleCopyInviteLink() {
-    await navigator.clipboard.writeText(inviteLink);
+    if (!(await copyToClipboard(inviteLink))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }

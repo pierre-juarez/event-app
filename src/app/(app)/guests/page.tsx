@@ -25,6 +25,7 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { Spinner } from "@/components/ui/Spinner";
 import { RsvpStatusChip, WhatsappInviteChip } from "@/components/ui/StatusChip";
 import { RSVP_LABELS } from "@/lib/format";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const RSVP_OPTIONS: RsvpStatus[] = ["pending", "confirmed", "declined"];
 const UNCATEGORIZED = "__uncategorized__";
@@ -46,6 +47,7 @@ export default function GuestsPage() {
   const [statusFilter, setStatusFilter] = useState<RsvpStatus | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
+  const [copiedGuestId, setCopiedGuestId] = useState<string | null>(null);
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [editingGuest, setEditingGuest] = useState<GuestRow | null>(null);
   const [deletingGuest, setDeletingGuest] = useState<GuestRow | null>(null);
@@ -282,6 +284,22 @@ export default function GuestsPage() {
                             {[guest.contact_phone, guest.contact_email].filter(Boolean).join(" · ")}
                           </p>
                         )}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const link = `${window.location.origin}/invite/${guest.invite_token}`;
+                          if (!(await copyToClipboard(link))) {
+                            window.prompt("Copia este link:", link);
+                            return;
+                          }
+                          setCopiedGuestId(guest.id);
+                          setTimeout(() => setCopiedGuestId(null), 2000);
+                        }}
+                        className="rounded-full p-1 text-muted hover:bg-sage-light"
+                        aria-label="Copiar link de invitación"
+                        title="Copiar link de invitación"
+                      >
+                        {copiedGuestId === guest.id ? "✅" : "🔗"}
                       </button>
                       <WhatsappInviteChip value={guest.whatsapp_invite_ok} />
                       <RsvpStatusChip status={guest.rsvp_status} />
