@@ -279,6 +279,9 @@ export default function GuestsPage() {
                             <span className="ml-1 text-xs text-muted">+{guest.plus_ones}</span>
                           )}
                         </p>
+                        {guest.song_suggestion && (
+                          <p className="text-xs text-warm">🎵 {guest.song_suggestion}</p>
+                        )}
                         {(guest.contact_phone || guest.contact_email) && (
                           <p className="text-xs text-muted">
                             {[guest.contact_phone, guest.contact_email].filter(Boolean).join(" · ")}
