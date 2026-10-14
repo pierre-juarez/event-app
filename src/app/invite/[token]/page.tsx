@@ -9,6 +9,7 @@ import type { PublicGuestWhatsappRow } from "@/lib/types";
 import { attendeeCount, stripInlinePlusOnes } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBanner } from "@/components/ui/ErrorBanner";
@@ -24,6 +25,7 @@ export default function PublicInvitePage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGuest, setSelectedGuest] = useState<PublicGuestWhatsappRow | null>(null);
+  const [query, setQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(["Sin responder", "Sí", "No"])
   );
@@ -55,9 +57,33 @@ export default function PublicInvitePage({
     return { totalRows: guests.length, totalPeople, yes, no, pending };
   }, [guests]);
 
-  const pendingGuests = useMemo(() => guests.filter((g) => g.whatsapp_invite_ok === null), [guests]);
-  const yesGuests = useMemo(() => guests.filter((g) => g.whatsapp_invite_ok === true), [guests]);
-  const noGuests = useMemo(() => guests.filter((g) => g.whatsapp_invite_ok === false), [guests]);
+  const normalizedQuery = normalizeText(query.trim());
+  const isSearching = normalizedQuery.length > 0;
+
+  const visibleGuests = useMemo(() => {
+    const sorted = [...guests].sort((a, b) =>
+      stripInlinePlusOnes(a.full_name).localeCompare(stripInlinePlusOnes(b.full_name), "es", {
+        sensitivity: "base",
+      })
+    );
+    if (!normalizedQuery) return sorted;
+    return sorted.filter((g) =>
+      normalizeText(stripInlinePlusOnes(g.full_name)).includes(normalizedQuery)
+    );
+  }, [guests, normalizedQuery]);
+
+  const pendingGuests = useMemo(
+    () => visibleGuests.filter((g) => g.whatsapp_invite_ok === null),
+    [visibleGuests]
+  );
+  const yesGuests = useMemo(
+    () => visibleGuests.filter((g) => g.whatsapp_invite_ok === true),
+    [visibleGuests]
+  );
+  const noGuests = useMemo(
+    () => visibleGuests.filter((g) => g.whatsapp_invite_ok === false),
+    [visibleGuests]
+  );
 
   useEffect(() => {
     (async () => {
@@ -128,12 +154,26 @@ export default function PublicInvitePage({
               </div>
             </Card>
 
+            <Input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar invitado..."
+              className="mb-4 px-4 py-3.5 text-xl"
+            />
+
+            {isSearching && visibleGuests.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted">
+                No encontramos a nadie con ese nombre.
+              </p>
+            )}
+
             <div className="flex flex-col gap-4">
               {pendingGuests.length > 0 && (
                 <GuestGroup
                   title="Sin responder"
                   guests={pendingGuests}
-                  isCollapsed={collapsedGroups.has("Sin responder")}
+                  isCollapsed={!isSearching && collapsedGroups.has("Sin responder")}
                   onToggle={() => toggleGroup("Sin responder")}
                   onSelect={setSelectedGuest}
                 />
@@ -142,7 +182,7 @@ export default function PublicInvitePage({
                 <GuestGroup
                   title="Sí"
                   guests={yesGuests}
-                  isCollapsed={collapsedGroups.has("Sí")}
+                  isCollapsed={!isSearching && collapsedGroups.has("Sí")}
                   onToggle={() => toggleGroup("Sí")}
                   onSelect={setSelectedGuest}
                 />
@@ -151,7 +191,7 @@ export default function PublicInvitePage({
                 <GuestGroup
                   title="No"
                   guests={noGuests}
-                  isCollapsed={collapsedGroups.has("No")}
+                  isCollapsed={!isSearching && collapsedGroups.has("No")}
                   onToggle={() => toggleGroup("No")}
                   onSelect={setSelectedGuest}
                 />
@@ -228,4 +268,8 @@ function GuestGroup({
       )}
     </Card>
   );
+}
+
+function normalizeText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
