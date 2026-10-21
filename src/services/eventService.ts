@@ -9,6 +9,8 @@ export interface EventInput {
   venue_address?: string | null;
   total_budget: number;
   notes?: string | null;
+  invite_message?: string | null;
+  invite_include_link?: boolean;
 }
 
 export type EventUpdate = Partial<Omit<EventInput, "owner_id">>;

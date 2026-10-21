@@ -30,3 +30,18 @@ export async function setGuestWhatsappInvite(
   });
   if (error) throw error;
 }
+
+export interface PublicInviteSettings {
+  invite_message: string | null;
+  invite_include_link: boolean;
+}
+
+export async function fetchPublicInviteSettings(shareToken: string): Promise<PublicInviteSettings> {
+  const { data, error } = await supabase.rpc("public_invite_settings", {
+    p_share_token: shareToken,
+  });
+  if (error) throw error;
+  return (
+    (data as PublicInviteSettings[])[0] ?? { invite_message: null, invite_include_link: true }
+  );
+}

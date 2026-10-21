@@ -6,6 +6,7 @@ import { useEvent } from "@/contexts/EventContext";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Card } from "@/components/ui/Card";
 import { copyToClipboard } from "@/lib/clipboard";
+import { DEFAULT_INVITE_MESSAGE } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Textarea } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -20,6 +21,9 @@ export default function SettingsPage() {
   const [venueAddress, setVenueAddress] = useState(event?.venue_address ?? "");
   const [totalBudget, setTotalBudget] = useState(event ? String(event.total_budget) : "");
   const [notes, setNotes] = useState(event?.notes ?? "");
+  const [inviteMessage, setInviteMessage] = useState(event?.invite_message ?? DEFAULT_INVITE_MESSAGE);
+  const [includeLink, setIncludeLink] = useState(event?.invite_include_link ?? true);
+  const [isSavingMessage, setIsSavingMessage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSignOutConfirmation, setShowSignOutConfirmation] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -33,6 +37,16 @@ export default function SettingsPage() {
     if (!(await copyToClipboard(inviteLink))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleSaveMessage() {
+    setIsSavingMessage(true);
+    const isDefault = inviteMessage.trim() === DEFAULT_INVITE_MESSAGE.trim();
+    await updateEvent({
+      invite_message: isDefault ? null : inviteMessage,
+      invite_include_link: includeLink,
+    });
+    setIsSavingMessage(false);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -112,6 +126,52 @@ export default function SettingsPage() {
           <Button variant="secondary" onClick={handleCopyInviteLink} className="shrink-0">
             {copied ? "¡Copiado!" : "Copiar link"}
           </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="font-medium text-charcoal">Mensaje de invitación</h2>
+        <p className="mt-1 text-sm text-muted">
+          Es el texto que se manda por WhatsApp a cada invitado. Usa{" "}
+          <code>{"{nombre}"}</code> para el nombre y <code>{"{link}"}</code> para el link
+          personal de confirmación.
+        </p>
+        <div className="mt-3 flex flex-col gap-4">
+          <label className="flex cursor-pointer items-center justify-between gap-3">
+            <span className="text-sm text-charcoal">Incluir link de confirmación</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={includeLink}
+              onClick={() => setIncludeLink((v) => !v)}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                includeLink ? "bg-sage-dark" : "bg-hairline"
+              }`}
+            >
+              <span
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  includeLink ? "translate-x-5" : ""
+                }`}
+              />
+            </button>
+          </label>
+          <div>
+            <Label htmlFor="settings-invite-message">Mensaje</Label>
+            <Textarea
+              id="settings-invite-message"
+              rows={12}
+              value={inviteMessage}
+              onChange={(e) => setInviteMessage(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={handleSaveMessage} isLoading={isSavingMessage} disabled={!inviteMessage.trim()}>
+              Guardar mensaje
+            </Button>
+            <Button variant="secondary" onClick={() => setInviteMessage(DEFAULT_INVITE_MESSAGE)}>
+              Restaurar original
+            </Button>
+          </div>
         </div>
       </Card>
 

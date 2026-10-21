@@ -16,6 +16,10 @@ export interface EventRow {
   notes: string | null;
   /** Token público para el link de confirmación de WhatsApp (sin login). */
   share_token: string;
+  /** Plantilla del mensaje de WhatsApp ({nombre}, {link}); null = la de por defecto. */
+  invite_message: string | null;
+  /** Si el mensaje lleva el link personal de confirmación. */
+  invite_include_link: boolean;
   created_at: string;
   updated_at: string;
 }

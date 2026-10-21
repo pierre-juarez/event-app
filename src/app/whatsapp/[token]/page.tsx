@@ -3,10 +3,16 @@
 import { use, useEffect, useMemo, useState } from "react";
 import {
   fetchPublicGuestWhatsappList,
+  fetchPublicInviteSettings,
   setGuestWhatsappInvite,
 } from "@/services/publicInviteService";
 import type { PublicGuestWhatsappRow } from "@/lib/types";
-import { attendeeCount, stripInlinePlusOnes, whatsappInviteUrl } from "@/lib/format";
+import {
+  attendeeCount,
+  stripInlinePlusOnes,
+  whatsappInviteUrl,
+  type InviteMessageSettings,
+} from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -16,11 +22,15 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { Spinner } from "@/components/ui/Spinner";
 
 /** Link wa.me con el mensaje y el link personal; null si el invitado no tiene un número válido. */
-function sendUrlFor(guest: PublicGuestWhatsappRow): string | null {
+function sendUrlFor(
+  guest: PublicGuestWhatsappRow,
+  settings: InviteMessageSettings
+): string | null {
   return whatsappInviteUrl(
     guest.contact_phone,
     stripInlinePlusOnes(guest.full_name),
-    `${window.location.origin}/invite/${guest.invite_token}`
+    `${window.location.origin}/invite/${guest.invite_token}`,
+    settings
   );
 }
 
@@ -34,6 +44,10 @@ export default function PublicInvitePage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGuest, setSelectedGuest] = useState<PublicGuestWhatsappRow | null>(null);
+  const [messageSettings, setMessageSettings] = useState<InviteMessageSettings>({
+    template: null,
+    includeLink: true,
+  });
   const [query, setQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(["Sin responder", "Sí", "No"])
@@ -99,7 +113,15 @@ export default function PublicInvitePage({
       setIsLoading(true);
       setError(null);
       try {
-        setGuests(await fetchPublicGuestWhatsappList(token));
+        const [list, settings] = await Promise.all([
+          fetchPublicGuestWhatsappList(token),
+          fetchPublicInviteSettings(token),
+        ]);
+        setGuests(list);
+        setMessageSettings({
+          template: settings.invite_message,
+          includeLink: settings.invite_include_link,
+        });
       } catch (e) {
         setError(`No se pudo cargar la lista: ${(e as Error).message}`);
       } finally {
@@ -184,6 +206,7 @@ export default function PublicInvitePage({
                   guests={pendingGuests}
                   isCollapsed={!isSearching && collapsedGroups.has("Sin responder")}
                   onToggle={() => toggleGroup("Sin responder")}
+                  messageSettings={messageSettings}
                   onSelect={setSelectedGuest}
                 />
               )}
@@ -193,6 +216,7 @@ export default function PublicInvitePage({
                   guests={yesGuests}
                   isCollapsed={!isSearching && collapsedGroups.has("Sí")}
                   onToggle={() => toggleGroup("Sí")}
+                  messageSettings={messageSettings}
                   onSelect={setSelectedGuest}
                 />
               )}
@@ -202,6 +226,7 @@ export default function PublicInvitePage({
                   guests={noGuests}
                   isCollapsed={!isSearching && collapsedGroups.has("No")}
                   onToggle={() => toggleGroup("No")}
+                  messageSettings={messageSettings}
                   onSelect={setSelectedGuest}
                 />
               )}
@@ -240,12 +265,14 @@ function GuestGroup({
   guests,
   isCollapsed,
   onToggle,
+  messageSettings,
   onSelect,
 }: {
   title: string;
   guests: PublicGuestWhatsappRow[];
   isCollapsed: boolean;
   onToggle: () => void;
+  messageSettings: InviteMessageSettings;
   onSelect: (guest: PublicGuestWhatsappRow) => void;
 }) {
   return (
@@ -271,9 +298,9 @@ function GuestGroup({
                 </span>
                 <span className="text-muted">›</span>
               </button>
-              {guest.whatsapp_invite_ok === true && sendUrlFor(guest) && (
+              {guest.whatsapp_invite_ok === true && sendUrlFor(guest, messageSettings) && (
                 <a
-                  href={sendUrlFor(guest)!}
+                  href={sendUrlFor(guest, messageSettings)!}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shrink-0 rounded-full bg-sage-light px-3 py-2 text-sm font-medium text-sage-dark hover:bg-sage/30"

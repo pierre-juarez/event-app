@@ -86,28 +86,63 @@ export function whatsappDigits(rawPhone: string | null): string | null {
   return digits.length >= 10 && digits.length <= 15 ? digits : null;
 }
 
-/** Link wa.me con el mensaje de invitación (emojis + link personal para confirmar). */
+/** Plantilla por defecto del mensaje; `{nombre}` y `{link}` se reemplazan al enviar. */
+export const DEFAULT_INVITE_MESSAGE = [
+  "¡Hola {nombre}! 🌸✨",
+  "",
+  "Mi cumpleaños se acerca, y con mucho cariño y aprecio te invito a celebrar *mis 50 años* 🎉🥳💐",
+  "",
+  "Aquí está tu invitación 💌 y todos los detalles (fecha, hora y lugar) 📅📍:",
+  "",
+  "Por favor confirma tu asistencia en el enlace de abajo 👇",
+  "{link}",
+  "",
+  "¡Será un honor compartir este día contigo! 💖🥂",
+  "",
+  "Espero verte! 🎶🎊",
+].join("\n");
+
+export interface InviteMessageSettings {
+  template: string | null;
+  includeLink: boolean;
+}
+
+/**
+ * Rellena la plantilla. Con el link activado, si la plantilla no trae `{link}`
+ * se agrega al final; desactivado, `{link}` se quita junto con su línea vacía.
+ */
+export function buildInviteMessage(
+  settings: InviteMessageSettings,
+  guestName: string,
+  inviteLink: string,
+): string {
+  const template = settings.template?.trim() ? settings.template : DEFAULT_INVITE_MESSAGE;
+  let text = template.replaceAll("{nombre}", guestName);
+  if (settings.includeLink) {
+    text = text.includes("{link}")
+      ? text.replaceAll("{link}", inviteLink)
+      : `${text}\n\n${inviteLink}`;
+  } else {
+    text = text
+      .split("\n")
+      .filter((line) => line.trim() !== "{link}")
+      .join("\n")
+      .replaceAll("{link}", "")
+      .replace(/\n{3,}/g, "\n\n");
+  }
+  return text;
+}
+
+/** Link wa.me con el mensaje de invitación; null si no hay un número válido. */
 export function whatsappInviteUrl(
   rawPhone: string | null,
   guestName: string,
   inviteLink: string,
+  settings: InviteMessageSettings = { template: null, includeLink: true },
 ): string | null {
   const digits = whatsappDigits(rawPhone);
   if (!digits) return null;
-  const message = [
-    `¡Hola ${guestName}! 🌸✨`,
-    "",
-    "Mi cumpleaños se acerca, y con mucho cariño y aprecio te invito a celebrar *mis 50 años* 🎉🥳💐",
-    "",
-    "Aquí está tu invitación 💌 y todos los detalles (fecha, hora y lugar) 📅📍:",
-    "",
-    "Por favor confirma tu asistencia en el enlace de abajo 👇",
-    inviteLink,
-    "",
-    "¡Será un honor compartir este día contigo! 💖🥂",
-    "",
-    "Espero verte! 🎶🎊",
-  ].join("\n");
+  const message = buildInviteMessage(settings, guestName, inviteLink);
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
